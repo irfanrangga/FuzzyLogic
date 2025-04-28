@@ -1,5 +1,14 @@
 import pandas as pd
 
+# Fungsi untuk membaca file data
+def read_data_file(file_path):
+    try:
+        data = pd.read_excel(file_path)
+        return data
+    except Exception as e:
+        print(f"Error reading the file: {e}")
+        return None
+
 #a adalah batas bawah, b adalah batas tengah, c adalah batas atas
 # Fungsi segitiga fuzzy untuk menghitung derajat keanggotaan
 def segitiga_fuzzy(x, a, b, c):
@@ -107,38 +116,40 @@ def defuzzifikasi(kategori):
         return 0.0
     return numerator / denominator
 
-# Proses semua data
-data = pd.read_excel('restoran.xlsx')
-hasil = []
-for index, row in data.iterrows():
-    harga_value = row['harga']
-    pelayanan_value = row['Pelayanan']
+def main():
+    # Baca data dari file Excel
+    file_path = 'restoran.xlsx'
+    data = read_data_file(file_path)
+    hasil = []
+    for index, row in data.iterrows():
+        harga_value = row['harga']
+        pelayanan_value = row['Pelayanan']
+        harga_fuzzy = fuzzy_harga(harga_value)
+        pelayanan_fuzzy = fuzzy_pelayanan(pelayanan_value)
+        hasil_inferensi = inferensi(harga_fuzzy, pelayanan_fuzzy)
+        rekomendasi_nilai = defuzzifikasi(hasil_inferensi)
     
-    harga_fuzzy = fuzzy_harga(harga_value)
-    pelayanan_fuzzy = fuzzy_pelayanan(pelayanan_value)
-    
-    hasil_inferensi = inferensi(harga_fuzzy, pelayanan_fuzzy)
-    rekomendasi_nilai = defuzzifikasi(hasil_inferensi)
-    
-    hasil.append({
-        'ID Restoran': row['id Pelanggan'],
-        'Kualitas Servis': pelayanan_value,
-        'Harga': harga_value,
-        'Nilai Rekomendasi': rekomendasi_nilai
-    })
+        hasil.append({
+            'ID Restoran': row['id Pelanggan'],
+            'Kualitas Servis': pelayanan_value,
+            'Harga': harga_value,
+            'Nilai Rekomendasi': rekomendasi_nilai
+        })
+    # Masukkan ke dataframe
+    hasil_df = pd.DataFrame(hasil)
 
-# Masukkan ke dataframe
-hasil_df = pd.DataFrame(hasil)
+    # Sortir berdasarkan Nilai Rekomendasi (Descending)
+    hasil_df = hasil_df.sort_values(by='Nilai Rekomendasi', ascending=False)
 
-# Sortir berdasarkan Nilai Rekomendasi (Descending)
-hasil_df = hasil_df.sort_values(by='Nilai Rekomendasi', ascending=False)
+    # Ambil 5 data terbaik
+    top5 = hasil_df.head(5)
+    top5.to_excel('hasil\\top_5_rekomendasi.xlsx', index=False)
+    print("Top 5 rekomendasi restoran telah disimpan di hasil\\top_5_rekomendasi.xlsx")
 
-# Ambil 5 data terbaik
-top5 = hasil_df.head(5)
+    # Simpan ke Excel
+    output_path = 'hasil\\rekomen_semua_restoran.xlsx'
+    hasil_df.to_excel(output_path, index=False)
+    print(f"Rekomendasi restoran telah disimpan di {output_path}")
 
-# Simpan ke Excel
-output_path = 'rekomen_semua_restoran.xlsx'
-hasil_df.to_excel(output_path, index=False)
-
-if __name__ == "__main__":
-    print("Proses selesai. Hasil disimpan di:", output_path)
+# Menjalankan fungsi utama
+main()
